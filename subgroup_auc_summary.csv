@@ -1,0 +1,25 @@
+subgroup,group_code,group_label,n,events,auc
+sex,1,Male,14888,431,0.8162
+sex,2,Female,14999,281,0.8551
+race7,1,White NH,25598,603,0.8453
+race7,2,Black NH,1437,36,0.8514
+race7,3,Hispanic,510,10,0.8278
+race7,4,Asian,1084,26,0.8148
+race7,5,Pacific Isl.,179,5,0.8529
+race7,6,Amer. Indian,84,1,0.3976
+race7,7,Missing,995,31,0.5932
+educat,1,<8 yrs,260,9,0.7769
+educat,2,8–11 yrs,1803,101,0.7972
+educat,3,HS,6550,153,0.8258
+educat,4,Post-HS train.,3555,92,0.8289
+educat,5,Some college,6248,157,0.8407
+educat,6,College,4971,91,0.8696
+educat,7,Postgrad,5434,77,0.8375
+educat,MISSING,Missing,1066,32,0.6021
+cig_stat,0,Never,13337,50,0.6868
+cig_stat,1,Current,3112,288,0.6584
+cig_stat,2,Former,12446,343,0.7658
+cig_stat,MISSING,Missing,992,31,0.5927
+nlst_flag,0,Not eligible,22625,224,0.7958
+nlst_flag,1,Eligible,5944,448,0.6959
+nlst_flag,MISSING,Missing,1318,40,0.6129
