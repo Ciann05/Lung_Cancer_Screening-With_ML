@@ -21,7 +21,7 @@ $$p = \sigma(\theta x + b)$$
 where $\theta$ and $b$ are our model parameters, $x$ is our feature vector, and $\sigma$ is the [sigmoid function](https://en.wikipedia.org/wiki/Sigmoid_function).
 
 **Loss Function:**
-We train our model using binary cross entropy loss with L2 regularization:
+I trained the model using binary cross entropy loss with L2 regularization:
 $$L(y, p) = -[y \log(p) + (1-y)\log(1-p)] + \frac{\lambda}{2} ||\theta||^2$$
 
 where $y$ is the true label, $p$ is the predicted probability, and $\lambda$ is the regularization parameter.
@@ -33,7 +33,7 @@ where $y$ is the true label, $p$ is the predicted probability, and $\lambda$ is 
 4. Implement SGD training loop
 
 **Expected Performance:**
-Your age-only validation AUC should be approximately **0.60**. This is reasonable because age is a strong predictor of lung cancer risk, but limited on its own.
+The age-only validation AUC should be approximately **0.60**. This is reasonable because age is a strong predictor of lung cancer risk, but limited on its own.
 
 ### 1.2: Implementing a grid search dispatcher
 
@@ -69,7 +69,4 @@ The final validation AUC should be ≥ **0.80**. This target is achievable with 
 - **Model not converging**: Try lower learning rate or more epochs
 - **Poor performance**: Check feature normalization and missing data handling
 - **Gradient explosion**: Verify gradient computation
-4. **Subgroup Performance**: Compute metrics for your chosen threshold across all patient subgroups
-
-### 2.5: Identifying limitations in study design
-Discuss implications and limitations: What's missing from these analyses? What additional studies are needed to inform screening guidelines?
+4. **Subgroup Performance**: Compute metrics for the chosen threshold across all patient subgroups
