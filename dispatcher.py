@@ -165,7 +165,7 @@ def main(args: argparse.Namespace) -> list[dict]:
     print("Starting grid search with the following config:")
     print(json.dumps(config, indent=2))
 
-    # TODO: From config, generate a list of experiments to run
+    # Expand the config into one experiment per hyperparameter combination
     experiments = get_experiment_list(config)
     random.shuffle(experiments)
 

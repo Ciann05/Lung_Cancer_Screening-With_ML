@@ -1,72 +1,61 @@
+# Lung Cancer Screening with Machine Learning
 
-# Designing lung cancer screening programs with machine learning
+A lung cancer risk model trained on questionnaire data from the PLCO cancer screening trial. It is compared against the eligibility criteria used in the NLST screening trial and audited for performance across patient subgroups. Built as coursework for CPH 100A.
 
-Lung cancer screening with low-dose computed tomography significantly improves patient lung cancer outcomes, improving survival and reducing morbidity; two large randomized control lung cancer screening trials have demonstrated 20% (NLST trial) and 24% (NELSON trial) reductions in lung cancer mortality respectively. These results have motivated the development of national lung screening programs. The success of these programs hinges on their ability to screen the right patients, balancing the benefits of early detection against the harms of overscreening. This capacity relies on the ability to estimate a patient's risk of developing lung cancer. Goal: develop machine learning tools to predict lung cancer risk from PLCO questionnaires, develop screening guideline simulations, and compare the cost-effectiveness of these proposed guidelines against current NLST criteria. 
+## Why it matters
 
+Low-dose CT screening cuts lung cancer mortality by 20–24% (NLST and NELSON trials), but a screening program only works if it reaches the right people. Screening too few people misses early cancers, while screening too many causes harm from false positives and unnecessary follow-up. Today's guidelines use simple age and smoking cutoffs. This project tests whether a learned risk model can choose who to screen more accurately.
 
-### Code Structure Overview
-- `main.py`: Main training loop (modify feature_config here)
-- `vectorizer.py`: Data preprocessing (implement all TODO functions)  
-- `logistic_regression.py`: Model implementation (implement fit, gradient, predict methods)
-- `dispatcher.py`: Hyperparameter search (implement get_experiment_list, launch_experiment)
+## Results
 
+| Model | Validation AUC | Test AUC |
+|---|---|---|
+| Age only | 0.607 | — |
+| Full model (13 features) | **0.849** | **0.837** |
 
-### 1.1: Implementing a simple age-based Logistic Regression Classifier
+**The model beats the NLST criteria.** At the NLST guideline's operating point (sensitivity 0.67, specificity 0.80), the model's ROC curve lies above it. At the same specificity, the model would catch more cancers than the current eligibility rules.
 
-Started off with implementing logistic regression with Stochastic Gradient Descent to predict lung cancer risk using just patient age.
+<p align="center">
+  <img src="roc_test_nlst.png" width="48%" alt="Test-set ROC curve with the NLST operating point">
+  <img src="pr_test_nlst.png" width="48%" alt="Test-set precision-recall curve with the NLST operating point">
+</p>
 
-**Model Definition:**
-$$p = \sigma(\theta x + b)$$
+Lung cancer is rare in this cohort (2.4% prevalence). The model's average precision of 0.112 is about 4.7× the base rate.
 
-where $\theta$ and $b$ are our model parameters, $x$ is our feature vector, and $\sigma$ is the [sigmoid function](https://en.wikipedia.org/wiki/Sigmoid_function).
+## Subgroup audit
 
-**Loss Function:**
-I trained the model using binary cross entropy loss with L2 regularization:
-$$L(y, p) = -[y \log(p) + (1-y)\log(1-p)] + \frac{\lambda}{2} ||\theta||^2$$
+I computed test AUC for each subgroup by sex, race, education, smoking status and NLST eligibility, to check where the model is weaker. Full numbers are in [`subgroup_auc_summary.csv`](subgroup_auc_summary.csv).
 
-where $y$ is the true label, $p$ is the predicted probability, and $\lambda$ is the regularization parameter.
+![Subgroup AUC](subgroup_auc.png)
 
-**Implementation Steps:**
-1. Extract age data (column name: `"age"`) from the PLCO CSV
-2. Implement feature normalization in `vectorizer.py`
-3. Derive and implement the gradient equations in `logistic_regression.py`.
-4. Implement SGD training loop
+Takeaways:
+- **Consistent across sex and most racial groups:** AUC ranges from 0.81 to 0.86 for male, female, White, Black, Hispanic, Asian, and Pacific Islander participants.
+- **Weaker where the data is thin:** American Indian participants (n = 84, only 1 cancer case) and rows with missing demographics have much lower AUC. Those estimates are unreliable, and these groups need more data before anyone could trust the model for them.
+- **Harder within NLST-eligible patients:** AUC is 0.70 among NLST-eligible people vs. 0.80 among ineligible people. Once everyone is an older heavy smoker, telling apart who gets cancer is a harder problem.
 
-**Expected Performance:**
-The age-only validation AUC should be approximately **0.60**. This is reasonable because age is a strong predictor of lung cancer risk, but limited on its own.
+## What I built
 
-### 1.2: Implementing a grid search dispatcher
+- **Logistic regression from scratch** (`logistic_regression.py`): mini-batch SGD with L2 regularization in NumPy. It uses a numerically stable sigmoid, and the gradient is `p − y`, so training never differentiates through `log(p)`.
+- **Feature pipeline** (`vectorizer.py`):
+  - Numerical features (age, pack-years, years smoked, years since quitting, BMI) are standardized, with mean imputation and a missingness indicator.
+  - Education is integer-encoded as an ordinal feature.
+  - Categorical features (sex, race, smoking status, family history, emphysema, bronchitis, cigarettes per day) are one-hot encoded, with "missing" as its own category.
+  - Optional quantile histogram binning is also available.
+- **Parallel grid search** (`dispatcher.py`): expands `grid_search.json` into every hyperparameter combination, runs them across worker processes, and writes a summary to `grid_results.csv`.
 
-A key challenge in developing effective machine learning tools is experiment management. 
+![Training loss vs. L2 regularization](l2_vs_train_loss.png)
 
-**Requirements:**
-- Take hyperparameter configurations from `grid_search.json`
-- Run experiments for each parameter combination
-- Track and summarize results in CSV format
-- Support parallel execution with multiple workers
+## Running it
 
+```bash
+pip install -r requirements.txt
+python main.py --plco_data_path /path/to/lung_prsn.csv --learning_rate 1e-3 --batch_size 64 --num_epochs 50
+python dispatcher.py --config_path grid_search.json --plco_data_path /path/to/lung_prsn.csv --num_workers 4
+```
 
-### 1.3: Building your best PLCO risk model
+The PLCO data is available on request from the NCI's [Cancer Data Access System](https://cdas.cancer.gov/plco/). It is not included in this repo.
 
-Extended my model to include additional features from the PLCO dataset.
+## Limitations
 
-**Feature Engineering Steps:**
-1. **Data Exploration**: Explore the dataset using the data dictionary
-2. **Feature Selection**: Choose 5-10 meaningful features beyond age (suggestions: smoking history, family history, demographics)
-3. **Vectorization Implementation**: Handle different data types:
-   - **Numerical features** (age, pack-years): normalize to zero mean, unit variance
-   - **Categorical features** (sex, race): one-hot encoding  
-   - **Ordinal features** (education): integer encoding
-4. **Missing Data Strategy**: Implement mean imputation, indicator variables, or other approach
-
-**Advanced Models**:
-Consider implementing Random Forest or Gradient Boosted Trees using `sklearn` for comparison.
-
-**Expected Performance:**
-The final validation AUC should be ≥ **0.80**. This target is achievable with good feature engineering and proper hyperparameter tuning.
-
-**Common Debugging Issues:**
-- **Model not converging**: Try lower learning rate or more epochs
-- **Poor performance**: Check feature normalization and missing data handling
-- **Gradient explosion**: Verify gradient computation
-4. **Subgroup Performance**: Compute metrics for the chosen threshold across all patient subgroups
+- PLCO participants were trial volunteers, who tend to be healthier and less diverse than the general screening population, so the results may not carry over.
+- This is a single train/validation/test split on one cohort. Before a model like this could inform guidelines, it would need external validation (for example on NLST or UK Biobank data), calibration checks, and a cost-effectiveness analysis.

@@ -78,14 +78,6 @@ def main(args: argparse.Namespace) -> dict:
     print("Loading data from {}".format(args.plco_data_path))
     train, val, test = load_data(args)
 
-    # TODO: Define feature configuration for your model
-    # Example configurations:
-    # For age-only model: feature_config = {"numerical": ["age"]}
-    # For full model: feature_config = {
-    #     "numerical": ["age", "pack_years"],  # Features to normalize
-    #     "categorical": ["sex", "race7"],     # Features for one-hot encoding
-    #     "ordinal": ["educat"]                # Features for integer encoding
-    # }
     # Full PLCO risk model (Part 1.3)
     # Numerical: normalize + mean-impute + missing indicator
     # Ordinal: integer levels, same missing handling

@@ -26,6 +26,7 @@ class Vectorizer:
     """
     def __init__(self, feature_config, num_bins=5):
         self.feature_config = feature_config
+        self.num_bins = num_bins
         self.feature_transforms = {}
         self.feature_order = []
         self.is_fit = False
@@ -82,8 +83,33 @@ class Vectorizer:
 
         return vectorizer
 
-    def get_histogram_vectorizer(self, values):
-        raise NotImplementedError("Histogram vectorizer not implemented yet")
+    def get_histogram_vectorizer(self, values, verbose=False):
+        """
+        Bin a numerical feature into quantile buckets and one-hot encode the bucket.
+        The last slot is a missingness indicator.
+        """
+        observed = [v for v in values if v is not None]
+        if len(observed) == 0:
+            edges = np.array([], dtype=float)
+        else:
+            quantiles = np.linspace(0, 1, self.num_bins + 1)[1:-1]
+            edges = np.unique(np.quantile(np.asarray(observed, dtype=float), quantiles))
+
+        if verbose:
+            print(f"Histogram feature bin edges={edges.tolist()}")
+
+        n_bins = len(edges) + 1
+
+        def vectorizer(x):
+            parsed = to_float(x)
+            one_hot = np.zeros(n_bins + 1, dtype=float)
+            if parsed is None:
+                one_hot[-1] = 1.0
+            else:
+                one_hot[int(np.searchsorted(edges, parsed, side="right"))] = 1.0
+            return one_hot
+
+        return vectorizer
 
     def get_categorical_vectorizer(self, values):
         """
@@ -122,6 +148,11 @@ class Vectorizer:
         for feature_name in self.feature_config.get("ordinal", []):
             values = [to_float(row[feature_name]) for row in X]
             self.feature_transforms[feature_name] = self.get_ordinal_vectorizer(values)
+            self.feature_order.append(feature_name)
+
+        for feature_name in self.feature_config.get("histogram", []):
+            values = [to_float(row[feature_name]) for row in X]
+            self.feature_transforms[feature_name] = self.get_histogram_vectorizer(values)
             self.feature_order.append(feature_name)
 
         for feature_name in self.feature_config.get("categorical", []):
